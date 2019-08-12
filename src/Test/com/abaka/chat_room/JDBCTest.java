@@ -3,14 +3,10 @@ package com.abaka.chat_room;
 import com.abaka.chat_room.util.CommUtils;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidDataSourceFactory;
-import com.sun.deploy.config.AutoUpdater;
-import com.sun.org.apache.xerces.internal.util.PropertyState;
 import org.junit.Test;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Properties;
-import java.util.concurrent.locks.Condition;
 
 /**
  * @author abaka
@@ -43,11 +39,10 @@ public class JDBCTest {
 
                 int id = resultSet.getInt("id");
                 String username = resultSet.getNString("username");
-                String passward = resultSet.getNString("passward");
+                String passward = resultSet.getNString("password");
                 String brief = resultSet.getNString("brief");
                 System.out.println("id: " + id +",username: " + username
-                + ",passward: " + passward + ",prief: " + brief);
-
+                + ",passward: " + passward + ",brief: " + brief);
             }
         }catch (SQLException e){
             e.printStackTrace();
@@ -63,7 +58,7 @@ public class JDBCTest {
 
         try {
             connection = dataSource.getConnection();
-            String sql = "insert into user(username, passward, brief) values (?,?,?)";
+            String sql = "insert into user(username, password, brief) values (?,?,?)";
             statement = connection.prepareStatement(sql);
             statement.setString(1,"test1");
             statement.setString(2,"123");
