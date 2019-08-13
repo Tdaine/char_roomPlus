@@ -4,6 +4,7 @@ import com.abaka.chat_room.client.entity.User;
 import com.abaka.chat_room.util.CommUtils;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidDataSourceFactory;
+import com.alibaba.druid.pool.DruidPooledConnection;
 
 import javax.sql.PooledConnection;
 import java.sql.Connection;
@@ -29,9 +30,9 @@ public class BasedDao {
         }
     }
 
-    protected Connection getConnection(){
+    protected DruidPooledConnection getConnection(){
         try {
-            return dataSource.getConnection();
+            return (DruidPooledConnection) dataSource.getPooledConnection();
         } catch (SQLException e) {
             e.printStackTrace();
         }

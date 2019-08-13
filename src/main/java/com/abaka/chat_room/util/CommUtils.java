@@ -1,5 +1,8 @@
 package com.abaka.chat_room.util;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -9,6 +12,8 @@ import java.util.Properties;
  * @date 2019/8/9 10:52
  */
 public class CommUtils {
+
+    private static final Gson GSON = new GsonBuilder().create();
 
     /**
      * 加载配置文件
@@ -25,5 +30,24 @@ public class CommUtils {
             e.printStackTrace();
         }
         return properties;
+    }
+
+    /**
+     * 将任意对象序列化为json字符串
+     * @param obj
+     * @return
+     */
+    public static String object2Json(Object obj){
+        return GSON.toJson(obj);
+    }
+
+    /**
+     * 将json反序列化为指定对象
+     * @param jsonStr
+     * @param object
+     * @return
+     */
+    public static Object json2Object(String jsonStr,Class object){
+        return GSON.fromJson(jsonStr,object);
     }
 }
