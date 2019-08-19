@@ -9,10 +9,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,6 +23,8 @@ public class MultiThreadServer {
 
     private static final Integer PORT;
     private static final String IP;
+    //缓存当前服务器注册的所有群名称以及群好友
+    private static Map<String,Set<String>> groups = new ConcurrentHashMap<>();
 
     //缓存当前服务器所有在在线的客户端信息
     private static Map<String,Socket> clients = new ConcurrentHashMap<>();
@@ -72,6 +71,33 @@ public class MultiThreadServer {
                         clients.put(username,client);
                         System.out.println(username + "上线了!");
                         System.out.println("当前聊天室共有" + clients.size() + "人");
+                    }else if (msgFromClient.getType().equals("2")){
+                        //用户私聊
+                        //type:2
+                        //content:myName-msg
+                        //to:friendName
+                        String friendName = msgFromClient.getTo();
+                        Socket clientSocket = clients.get(friendName);
+                        try {
+                            PrintStream out = new PrintStream(clientSocket.getOutputStream(),
+                                    true,"UTF-8");
+                            MessageVO msg2Client = new MessageVO();
+                            msg2Client.setType("2");
+                            msg2Client.setContent(msgFromClient.getContent());
+                            //System.out.println("收到私聊信息，内容为" + msgFromClient.getContent());
+                            out.println(CommUtils.object2Json(msg2Client));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }else if (msgFromClient.getType().equals("3")){
+                        //注册群
+                        String groupName = msgFromClient.getContent();
+                        //该群的所有群成员
+                        Set<String> friends = (Set<String>) CommUtils.json2Object(
+                                msgFromClient.getTo(),Set.class);
+                        groups.put(groupName,friends);
+                        System.out.println("有新的群注册成功,群名称为"+groupName +
+                                ",一共有" + groups.size() + "个群");
                     }
                 }
             }
