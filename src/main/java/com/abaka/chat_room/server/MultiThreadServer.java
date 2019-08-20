@@ -2,6 +2,7 @@ package com.abaka.chat_room.server;
 
 import com.abaka.chat_room.util.CommUtils;
 import com.abaka.chat_room.vo.MessageVO;
+import com.mysql.fabric.xmlrpc.Client;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -98,6 +99,26 @@ public class MultiThreadServer {
                         groups.put(groupName,friends);
                         System.out.println("有新的群注册成功,群名称为"+groupName +
                                 ",一共有" + groups.size() + "个群");
+                    }else if (msgFromClient.getType().equals("4")){
+                        //群聊信息
+                        String groupName = msgFromClient.getTo();
+                        Set<String> names = groups.get(groupName);
+                        Iterator<String> iterator = names.iterator();
+                        while (iterator.hasNext()){
+                            String socketName = iterator.next();
+                            Socket client = clients.get(socketName);
+                            try {
+                                PrintStream out = new PrintStream(client.getOutputStream(),true,"UTF-8");
+                                MessageVO messageVO = new MessageVO();
+                                messageVO.setType("4");
+                                messageVO.setContent(msgFromClient.getContent());
+                                //群名+群成员
+                                messageVO.setTo(groupName + "-" + CommUtils.object2Json(names));
+                                out.println(CommUtils.object2Json(messageVO));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
                 }
             }

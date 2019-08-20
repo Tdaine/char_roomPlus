@@ -32,7 +32,8 @@ public class FriendsList {
     private Connect2Server connect2Server;
     //保存所有私聊界面
     private Map<String,PrivateChatGUI> privateChatGUIList = new ConcurrentHashMap<>();
-
+    //保存所有群聊界面
+    private Map<String,GroupChatGUI> groupChatGUIList = new ConcurrentHashMap<>();
     //储存所有群名称以及群好友
     private Map<String,Set<String>> groupList = new ConcurrentHashMap<>();
 
@@ -67,6 +68,42 @@ public class FriendsList {
                                 privateChatGUI.readFromServer(friendName + "说:" + msg);
                             }
 
+                        }else if (messageVO.getType().equals("4")){
+                            //服务器发来的群聊信息
+                            String groupName = messageVO.getTo().split("-")[0];
+                            String groupMsg = messageVO.getContent().split("-")[1];
+                            String sendName = messageVO.getContent().split("-")[0];
+                            //若此群名称在群聊列表中
+                            if (groupList.containsKey(groupName)){
+                                //第一次收到消息
+                                if (groupChatGUIList.containsKey(groupName)){
+                                    //通过群名获取界面
+                                    GroupChatGUI groupChatGUI = groupChatGUIList.get(groupName);
+                                    groupChatGUI.getFrame().setVisible(true);
+                                    //将聊天语句发送到群聊界面
+                                    groupChatGUI.readFromServer(sendName + "说:" + groupMsg);
+                                }else {
+                                    Set<String> names = groupList.get(groupName);
+                                    GroupChatGUI groupChatGUI = new GroupChatGUI(groupName,
+                                            names,username,connect2Server);
+                                    groupChatGUIList.put(groupName,groupChatGUI);
+                                    groupChatGUI.readFromServer(sendName + "说:" + groupMsg);
+                                }
+                            }else {
+
+                                //若群成员第一次收到群聊信息
+                                //1.将群名称以及群成员保存到当前客户端群聊列表
+                                Set<String> frineds = (Set<String>) CommUtils.json2Object(messageVO.getTo().split("-")[1],Set.class);
+                                groupList.put(groupName,frineds);
+                                //刷新群列表
+                                loadGroupList();
+                                //2.弹出群聊界面
+                                GroupChatGUI groupChatGUI = new GroupChatGUI(groupName,frineds,username,connect2Server);
+                                //将聊天界面保存到缓存中
+                                groupChatGUIList.put(groupName,groupChatGUI);
+                                groupChatGUI.readFromServer(sendName + "说:" + groupMsg);
+
+                            }
                         }
                     }else {
                         //newLogin:userName
@@ -134,9 +171,22 @@ public class FriendsList {
     //标签点击事件，打开群聊窗口
     private class GroupLabelAction implements MouseListener{
 
+        private String groupName;
+
+        public GroupLabelAction(String groupName) {
+            this.groupName = groupName;
+        }
+
         @Override
         public void mouseClicked(MouseEvent e) {
-
+            if(groupChatGUIList.containsKey(groupName)){
+                GroupChatGUI groupChatGUI = groupChatGUIList.get(groupName);
+                groupChatGUI.getFrame().setVisible(true);
+            }else {
+                GroupChatGUI groupChatGUI = new GroupChatGUI(groupName,
+                        groupList.get(groupName),username,connect2Server);
+                groupChatGUIList.put(groupName,groupChatGUI);
+            }
         }
 
         @Override
@@ -221,6 +271,8 @@ public class FriendsList {
         while (iterator.hasNext()){
             Map.Entry<String,Set<String>> entry = iterator.next();
             labels[i] = new JLabel(entry.getKey());
+            //添加标签点击事件
+            labels[i].addMouseListener(new GroupLabelAction(entry.getKey()));
             groupNamePanel.add(labels[i]);
             i++;
         }
