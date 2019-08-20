@@ -19,4 +19,8 @@ public class TestGUI {
     private JPanel Button;
     private JButton register;
     private JButton login;
+
+    private void createUIComponents() {
+        // TODO: place custom component creation code here
+    }
 }
