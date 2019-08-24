@@ -54,7 +54,7 @@ public class CreateGroupGUI {
 
         //点击提交按钮提交信息到服务端
         conformBtn.addActionListener(new ActionListener() {
-            Set<String> selectedFriends = new HashSet<>();
+            //Set<String> selectedFriends = new HashSet<>();
 
             @Override
             public void actionPerformed(ActionEvent e) {

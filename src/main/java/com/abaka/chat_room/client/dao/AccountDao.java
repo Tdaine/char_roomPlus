@@ -75,4 +75,28 @@ public class AccountDao extends BasedDao{
         }
         return null;
     }
+
+
+    public Boolean isExist(String userName){
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = getConnection();
+            String sql = "select * from user where username = ? ";
+            statement = connection.prepareStatement(sql);
+            statement.setString(1,userName);
+            resultSet = statement.executeQuery();
+            if (resultSet.next()){
+               return true;
+            }
+        } catch (SQLException e) {
+            System.out.println("用户查找失败");
+            e.printStackTrace();
+        }finally {
+            close(connection,statement,resultSet);
+        }
+        return false;
+    }
 }

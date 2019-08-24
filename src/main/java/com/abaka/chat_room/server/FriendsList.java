@@ -5,10 +5,9 @@ import com.abaka.chat_room.util.CommUtils;
 import com.abaka.chat_room.vo.MessageVO;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
@@ -65,6 +64,8 @@ public class FriendsList {
                             }else {
                                 PrivateChatGUI privateChatGUI = new PrivateChatGUI(friendName,
                                         username,connect2Server);
+                                //将新建的私聊窗口保存到map中
+                                privateChatGUIList.put(friendName,privateChatGUI);
                                 privateChatGUI.readFromServer(friendName + "说:" + msg);
                             }
 
@@ -75,20 +76,22 @@ public class FriendsList {
                             String sendName = messageVO.getContent().split("-")[0];
                             //若此群名称在群聊列表中
                             if (groupList.containsKey(groupName)){
-                                //第一次收到消息
-                                if (groupChatGUIList.containsKey(groupName)){
+                                //不是第一次收到消息
+                                if (groupChatGUIList.containsKey(groupName)) {
                                     //通过群名获取界面
                                     GroupChatGUI groupChatGUI = groupChatGUIList.get(groupName);
                                     groupChatGUI.getFrame().setVisible(true);
                                     //将聊天语句发送到群聊界面
                                     groupChatGUI.readFromServer(sendName + "说:" + groupMsg);
-                                }else {
-                                    Set<String> names = groupList.get(groupName);
-                                    GroupChatGUI groupChatGUI = new GroupChatGUI(groupName,
-                                            names,username,connect2Server);
-                                    groupChatGUIList.put(groupName,groupChatGUI);
-                                    groupChatGUI.readFromServer(sendName + "说:" + groupMsg);
                                 }
+//                                }else {
+//                                    //之前收到消息将窗口关闭了，再次收到消息
+//                                    Set<String> names = groupList.get(groupName);
+//                                    GroupChatGUI groupChatGUI = new GroupChatGUI(groupName,
+//                                            names,username,connect2Server);
+//                                    groupChatGUIList.put(groupName,groupChatGUI);
+//                                    groupChatGUI.readFromServer(sendName + "说:" + groupMsg);
+//                                }
                             }else {
 
                                 //若群成员第一次收到群聊信息
@@ -113,6 +116,13 @@ public class FriendsList {
                             //弹框提示用户上线
                             JOptionPane.showMessageDialog(frame,newFriendName + "上线了！",
                                     "上线提醒",JOptionPane.INFORMATION_MESSAGE);
+                            //刷新好友列表
+                            loadUsers();
+                        }else if (strFromServer.startsWith("quitUser:")){
+                            String quitUser = strFromServer.split(":")[1];
+                            users.remove(quitUser);
+                            JOptionPane.showMessageDialog(frame,quitUser + "下线了!",
+                                    "系统提醒",JOptionPane.INFORMATION_MESSAGE);
                             //刷新好友列表
                             loadUsers();
                         }
@@ -216,7 +226,8 @@ public class FriendsList {
         this.connect2Server = connect2Server;
         frame = new JFrame(username);
         frame.setContentPane(friendsPanel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //默认关闭窗口不做处理
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.setSize(400,300);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -230,6 +241,29 @@ public class FriendsList {
             public void actionPerformed(ActionEvent e) {
                 new CreateGroupGUI(username,users,connect2Server,
                         FriendsList.this);
+            }
+        });
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                int option = JOptionPane.showConfirmDialog(null,"是否退出登陆?",
+                        "系统提示",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+                if (option == JOptionPane.YES_NO_OPTION){
+                    MessageVO messageVO = new MessageVO();
+                    //退出登陆
+                    //type:0
+                    //content：username
+                    messageVO.setType("0");
+                    messageVO.setContent(username);
+                    String json = CommUtils.object2Json(messageVO);
+                    try {
+                        PrintStream out = new PrintStream(connect2Server.getOut(),true,"UTF-8");
+                        out.println(json);
+                    } catch (UnsupportedEncodingException e1) {
+                        e1.printStackTrace();
+                    }
+                    System.exit(0);
+                }
             }
         });
     }

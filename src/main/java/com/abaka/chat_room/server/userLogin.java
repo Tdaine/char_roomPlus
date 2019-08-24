@@ -5,6 +5,7 @@ import com.abaka.chat_room.client.entity.User;
 import com.abaka.chat_room.client.service.Connect2Server;
 import com.abaka.chat_room.util.CommUtils;
 import com.abaka.chat_room.vo.MessageVO;
+import jdk.nashorn.internal.scripts.JO;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -58,11 +59,6 @@ public class userLogin {
                 String password = String.valueOf(passwordText.getPassword());
                 User user = new AccountDao().login(username,password);
                 if (user != null){
-
-                    //成功，加载用户列表
-                    JOptionPane.showMessageDialog(frame,
-                            "登陆成功","提示信息",JOptionPane.INFORMATION_MESSAGE);
-                    frame.setVisible(false);
                     //与服务器建立连接，将当前用户的用户名与密码发送到客户端
                     Connect2Server connect2Server = new Connect2Server();
                     MessageVO mss2Server = new MessageVO();
@@ -80,12 +76,22 @@ public class userLogin {
                             String msgFromServerStr = in.nextLine();
                             MessageVO msgFromServer = (MessageVO) CommUtils.json2Object(
                                     msgFromServerStr,MessageVO.class);
-                            Set<String> users = (Set<String>) CommUtils.json2Object(
-                                    msgFromServer.getContent(),Set.class);
-                            System.out.println("所有在线用户为:" + users);
-                            //加载用户列表界面
-                            //将当前用户名、所有在线好友、与服务器建立连接传递到好友列表界面
-                            new FriendsList(username,users,connect2Server);
+                            if (msgFromServer.getType().equals("-1")){
+                                //用户在别处正在登陆
+                                JOptionPane.showMessageDialog(frame,"当前用户在别地已经登陆",
+                                        "提示信息",JOptionPane.ERROR_MESSAGE);
+                            }else {
+                                //成功，加载用户列表
+                                JOptionPane.showMessageDialog(frame,
+                                        "登陆成功","提示信息",JOptionPane.INFORMATION_MESSAGE);
+                                frame.setVisible(false);
+                                Set<String> users = (Set<String>) CommUtils.json2Object(
+                                        msgFromServer.getContent(),Set.class);
+                                System.out.println("所有在线用户为:" + users);
+                                //加载用户列表界面
+                                //将当前用户名、所有在线好友、与服务器建立连接传递到好友列表界面
+                                new FriendsList(username,users,connect2Server);
+                            }
                         }
                     } catch (UnsupportedEncodingException e1) {
                         e1.printStackTrace();

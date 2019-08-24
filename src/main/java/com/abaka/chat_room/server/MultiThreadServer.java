@@ -3,6 +3,7 @@ package com.abaka.chat_room.server;
 import com.abaka.chat_room.util.CommUtils;
 import com.abaka.chat_room.vo.MessageVO;
 import com.mysql.fabric.xmlrpc.Client;
+import com.sun.xml.internal.ws.api.message.MessageWritable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,17 +62,33 @@ public class MultiThreadServer {
                     //新用户注册到服务端
                     if (msgFromClient.getType().equals("1")){
                         String username = msgFromClient.getContent();
-                        //将当前在线的所有用户发回客户端
-                        MessageVO msg2Client = new MessageVO();
-                        msg2Client.setType("1");
-                        msg2Client.setContent(CommUtils.object2Json(clients.keySet()));
-                        out.println(CommUtils.object2Json(msg2Client));
-                        //将新上线的用户信息发回给当前已在线的所有用户
-                        sendUserLogin("newLogin:" + username);
-                        //将新用户加到服务器缓冲区中
-                        clients.put(username,client);
-                        System.out.println(username + "上线了!");
+                        //判断当前用户是否已经上线
+                        if (clients.containsKey(username)){
+                            MessageVO messageVO = new MessageVO();
+                            messageVO.setType("-1");
+                            out.println(CommUtils.object2Json(messageVO));
+                        }else {
+                            //将当前在线的所有用户发回客户端
+                            MessageVO msg2Client = new MessageVO();
+                            msg2Client.setType("1");
+                            msg2Client.setContent(CommUtils.object2Json(clients.keySet()));
+                            out.println(CommUtils.object2Json(msg2Client));
+                            //将新上线的用户信息发回给当前已在线的所有用户
+                            sendUserLogin("newLogin:" + username);
+                            //将新用户加到服务器缓冲区中
+                            clients.put(username,client);
+                            System.out.println(username + "上线了!");
+                            System.out.println("当前聊天室共有" + clients.size() + "人");
+                        }
+
+                    }else if (msgFromClient.getType().equals("0")){
+                        //用户退出
+                        String username = msgFromClient.getContent();
+                        clients.remove(username);
+                        sendUserLogin("quitUser:" + username);
+                        System.out.println(username + "下线了!");
                         System.out.println("当前聊天室共有" + clients.size() + "人");
+
                     }else if (msgFromClient.getType().equals("2")){
                         //用户私聊
                         //type:2
@@ -106,17 +123,20 @@ public class MultiThreadServer {
                         Iterator<String> iterator = names.iterator();
                         while (iterator.hasNext()){
                             String socketName = iterator.next();
-                            Socket client = clients.get(socketName);
-                            try {
-                                PrintStream out = new PrintStream(client.getOutputStream(),true,"UTF-8");
-                                MessageVO messageVO = new MessageVO();
-                                messageVO.setType("4");
-                                messageVO.setContent(msgFromClient.getContent());
-                                //群名+群成员
-                                messageVO.setTo(groupName + "-" + CommUtils.object2Json(names));
-                                out.println(CommUtils.object2Json(messageVO));
-                            } catch (IOException e) {
-                                e.printStackTrace();
+
+                            if (clients.containsKey(socketName)){
+                                Socket client = clients.get(socketName);
+                                try {
+                                    PrintStream out = new PrintStream(client.getOutputStream(),true,"UTF-8");
+                                    MessageVO messageVO = new MessageVO();
+                                    messageVO.setType("4");
+                                    messageVO.setContent(msgFromClient.getContent());
+                                    //群名+群成员
+                                    messageVO.setTo(groupName + "-" + CommUtils.object2Json(names));
+                                    out.println(CommUtils.object2Json(messageVO));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
                     }
