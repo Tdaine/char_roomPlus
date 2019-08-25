@@ -74,7 +74,7 @@ public class GroupChatGUI {
     }
 
     public void readFromServer(String msg){
-        readFromServer.append(msg + "\n");
+        readFromServer.append(msg + "    " + System.currentTimeMillis() + "\n");
     }
 
     public JFrame getFrame() {

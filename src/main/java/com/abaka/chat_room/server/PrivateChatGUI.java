@@ -65,7 +65,7 @@ public class PrivateChatGUI {
     }
     //将自己输出的msg添加到聊天页面上
     public void readFromServer(String msg){
-        readFromServer.append(msg + "\n");
+        readFromServer.append(msg + "    " + System.currentTimeMillis() + "\n");
     }
 
     public JFrame getFrame() {
