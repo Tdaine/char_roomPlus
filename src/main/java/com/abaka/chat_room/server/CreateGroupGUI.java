@@ -71,27 +71,32 @@ public class CreateGroupGUI {
                 selectedFriends.add(myName);
                 //2.获取群名输入框输入的群名
                 String groupName = groupNameText.getText();
-                //3.将群名+选中好友信息发送到服务端
-                //type:3
-                //content:groupName
-                //to:[user1,user2,user3]
-                MessageVO messageVO = new MessageVO();
-                messageVO.setType("3");
-                messageVO.setContent(groupName);
-                messageVO.setTo(CommUtils.object2Json(selectedFriends));
-                try {
-                    PrintStream out = new PrintStream(connect2Server.getOut(),true,"UTF-8");
-                    out.println(CommUtils.object2Json(messageVO));
-                } catch (UnsupportedEncodingException e1) {
-                    e1.printStackTrace();
-                }
+                if (selectedFriends.size() >= 3 && groupName.length() >= 1 && !groupName.contains(" ")){
+                    //3.将群名+选中好友信息发送到服务端
+                    //type:3
+                    //content:groupName
+                    //to:[user1,user2,user3]
+                    MessageVO messageVO = new MessageVO();
+                    messageVO.setType("3");
+                    messageVO.setContent(groupName);
+                    messageVO.setTo(CommUtils.object2Json(selectedFriends));
+                    try {
+                        PrintStream out = new PrintStream(connect2Server.getOut(),true,"UTF-8");
+                        out.println(CommUtils.object2Json(messageVO));
+                    } catch (UnsupportedEncodingException e1) {
+                        e1.printStackTrace();
+                    }
 
-                //4.将当前创建群的界面隐藏，刷新好友列表界面的群列表
-                frame.setVisible(false);
-                //addGroupInfo
-                //loadGroup
-                friendsList.addGroup(groupName,selectedFriends);
-                friendsList.loadGroupList();
+                    //4.将当前创建群的界面隐藏，刷新好友列表界面的群列表
+                    frame.setVisible(false);
+                    //addGroupInfo
+                    //loadGroup
+                    friendsList.addGroup(groupName,selectedFriends);
+                    friendsList.loadGroupList();
+                }else {
+                    JOptionPane.showMessageDialog(frame,"群聊成员必须大于2人，群名必须填写并且群名不能包含空格",
+                            "提示信息",JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
     }
